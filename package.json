@@ -1,0 +1,28 @@
+{
+  "name": "nativescript-devtools",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently --kill-others  \"npx tsc --project ./packages/electron --watch\" \"npx tsc --project ./packages/cdp --watch\" \"cd ./packages/devtools && npm run dev\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^20.11.19",
+    "concurrently": "^8.2.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@types/ws": "^8.5.10",
+    "chrome-remote-interface": "^0.33.0",
+    "electron": "^28.2.3",
+    "execa": "^8.0.1",
+    "pathe": "^1.1.2",
+    "vscode-cdp-proxy": "^0.2.1",
+    "ws": "^8.16.0"
+  }
+}
