@@ -1,15 +1,23 @@
+import { Server } from "socket.io";
 import { ErrorEvent, WebSocket } from "ws";
 
-type CallbackMessage = (data: any) => void;
 
-export interface CdpAdapter {
-    send: (data: any) => void,
-    addOnMessage: (callback: CallbackMessage) => void
+export abstract class CdpAdapter {
+    private serverSocketIo?: Server;
+    abstract send(data: any): void
+
+    // Internal use
+    public setServerSocketIo(serverSocketIo: Server) {
+        this.serverSocketIo = serverSocketIo;
+    }
+
+    public onMessage(data: any) {
+        if (this.serverSocketIo)
+            this.serverSocketIo.emit("cdp", data)
+    }
 }
-
-export class DefaultCdpAdapter implements CdpAdapter {
+export class DefaultCdpAdapter extends CdpAdapter {
     webSocket: WebSocket | null = null;
-    onMessageCallbacks: CallbackMessage[] = []
 
     initBus() {
         this.webSocket = new WebSocket("ws://localhost:41000");
@@ -27,19 +35,13 @@ export class DefaultCdpAdapter implements CdpAdapter {
 
 
         this.webSocket?.on('message', (data) => {
-            console.log('received: %s', data);
             const dataReceived = JSON.parse((data as Buffer).toString("utf-8"));
             if (dataReceived.method)
-                this.onMessageCallbacks.forEach(callback => callback({ method: dataReceived.method, params: dataReceived.params }))
+                this.onMessage({ method: dataReceived.method, params: dataReceived.params })
         });
     }
+
     send(data: any) {
         this.webSocket?.send(JSON.stringify(data));
     }
-
-    addOnMessage(callback: CallbackMessage) {
-        this.onMessageCallbacks.push(callback)
-
-    };
-
 }
