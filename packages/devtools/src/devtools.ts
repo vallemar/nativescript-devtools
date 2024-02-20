@@ -12,7 +12,7 @@ import { CdpAdapter, DefaultCdpAdapter } from "../../cdp/src/connection"
 const dotenvFile = process.env.NODE_ENV === "production" ? ".production" : ""
 dotenv.config({ path: `.env${dotenvFile}` })
 
-export function runDevTools(options: { cdpAdapter?: CdpAdapter }) {
+export function runDevTools(options?: { cdpAdapter?: CdpAdapter }) {
     return new Promise<void>(resolve => {
         const port = (process.env.PORT || 3000) as number
         const app = createApp()
