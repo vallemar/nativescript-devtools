@@ -1,13 +1,12 @@
-import { connect, send, onMessage } from '../../cdp/src/connection'
+import { DefaultCdpAdapter } from '../../cdp/src/connection'
 
 
 export function runCDP(onMessageCallback: (data: any) => void) {
-    connect();
-    onMessage(onMessageCallback);
-    function disconnect() {
+    const cdpAdapter = new DefaultCdpAdapter();
+    cdpAdapter.addOnMessage(onMessageCallback)
+    cdpAdapter.initBus();
 
-    }
     return {
-        disconnect
+        cdpAdapter
     }
 }
