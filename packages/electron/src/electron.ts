@@ -1,6 +1,6 @@
 import path, { dirname } from 'node:path'
 import { URL, fileURLToPath } from 'node:url'
-import { BrowserWindow, app } from 'electron'
+import { BrowserWindow, app, ipcMain } from 'electron'
 
 
 const __filename = fileURLToPath(import.meta.url);

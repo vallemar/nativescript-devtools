@@ -13,8 +13,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@nativescript-community/devtools-shared": "file:../shared",
+    "pinia": "^2.1.7",
     "socket.io-client": "^4.7.4",
-    "vue": "^3.4.19"
+    "vue": "^3.4.19",
+    "vue-router": "^4.2.5"
   },
   "devDependencies": {
     "@types/socket.io-client": "^3.0.0",

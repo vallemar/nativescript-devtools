@@ -11,6 +11,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/express": "^4.17.21",
     "@types/node": "^20.11.19",
     "concurrently": "^8.2.2",
     "ts-node": "^10.9.2",
@@ -21,6 +22,7 @@
     "chrome-remote-interface": "^0.33.0",
     "electron": "^28.2.3",
     "execa": "^8.0.1",
+    "express": "^4.18.2",
     "pathe": "^1.1.2",
     "vscode-cdp-proxy": "^0.2.1",
     "ws": "^8.16.0"

@@ -1,5 +1,5 @@
 {
-  "name": "@nativescript-community/devtools-cdp",
+  "name": "@nativescript-community/devtools-shared",
   "version": "1.0.0",
   "description": "",
   "type": "module",
@@ -9,10 +9,7 @@
   },
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "@nativescript-community/devtools-shared": "file:../shared",
-    "devtools-protocol": "^0.0.1263133",
-    "noice-json-rpc": "^1.2.0",
+  "devDependencies": {
     "socket.io": "^4.7.4"
   }
 }
