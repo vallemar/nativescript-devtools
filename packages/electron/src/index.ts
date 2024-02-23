@@ -21,7 +21,7 @@ viteProcess.stdout?.on('data', function (stdout) {
 }); */
 
 
-export async function runApp(portBackend: number) {
+export async function runElectronApp(portBackend: number) {
     if (process.env.NODE_ENV !== "production") {
         runViteAndExtracPort("cd " + path.join(__dirname, "../../ui") + " && BACKEND_DEVTOOL_PORT=" + portBackend + " npm run dev").then(port => {
             process.env.FRONTEND_DEVTOOL_PORT = port;

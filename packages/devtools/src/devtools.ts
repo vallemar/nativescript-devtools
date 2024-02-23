@@ -1,4 +1,4 @@
-import { runApp } from '@nativescript-community/devtools-electron'
+import { runElectronApp } from '@nativescript-community/devtools-electron'
 import fs from 'node:fs'
 import path from 'node:path'
 import { Server } from "socket.io";
@@ -12,6 +12,7 @@ import { DevToolsTabView, CdpAdapter, runViteAndExtracPort } from "@nativescript
 import { fileURLToPath } from 'node:url';
 import { exec } from 'node:child_process';
 import tcpPortUsed from "tcp-port-used"
+import open from 'open';
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -32,7 +33,7 @@ async function findFreePort(port: number) {
 
 const backendDevToolPort = await findFreePort((process.env.PORT ? parseInt(process.env.PORT) : 3000));
 
-export function runDevTools(options?: { cdpAdapter?: CdpAdapter, portCdp?: number }) {
+export function runDevTools(options?: { cdpAdapter?: CdpAdapter, portCdp?: number, runInWepApp?: boolean, runInBackground?: boolean }) {
     return new Promise<void>(resolve => {
         app = express();
         const cdpAdapter = new DefaultCdpAdapter();
@@ -66,7 +67,7 @@ export function runDevTools(options?: { cdpAdapter?: CdpAdapter, portCdp?: numbe
             })
         });
 
-        serverExpress.listen(backendDevToolPort, () => {
+        serverExpress.listen(backendDevToolPort, async () => {
             console.log(`listening on 0.0.0.0:${backendDevToolPort}`)
             if (options?.cdpAdapter) {
                 options?.cdpAdapter.setServerSocketIo(io!);
@@ -77,7 +78,15 @@ export function runDevTools(options?: { cdpAdapter?: CdpAdapter, portCdp?: numbe
                 cdpAdapter.setServerSocketIo(io!);
                 cdpAdapter.initBus();
             }
-            runApp(backendDevToolPort)
+            if (options?.runInBackground === undefined || options?.runInBackground === false) {
+                if (options?.runInWepApp) {
+                    //TODO: define admin panel
+                    await open('https://sindresorhus.com?BACKEND_DEVTOOL_PORT=' + backendDevToolPort);
+                } else {
+                    runElectronApp(backendDevToolPort)
+                }
+            }
+
             resolve();
         });
     })
