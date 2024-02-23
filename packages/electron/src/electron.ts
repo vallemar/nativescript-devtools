@@ -1,6 +1,6 @@
 import path, { dirname } from 'node:path'
 import { URL, fileURLToPath } from 'node:url'
-import { BrowserWindow, app, ipcMain } from 'electron'
+import elector, { BrowserWindow, app, ipcMain } from 'electron'
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -24,7 +24,7 @@ function createWindow() {
     mainWindow.setMenu(null)
 
     const appEntryPath = path.join(__dirname, '../../ui/index.html')
-    const url = process.env.NODE_ENV === "production" ? new URL(`file://${appEntryPath}`).toString() : "http://localhost:5173/";
+    const url = process.env.NODE_ENV === "production" ? new URL(`file://${appEntryPath}`).toString() : "http://localhost:" + process.env.FRONTEND_DEVTOOL_PORT + "/";
     mainWindow.loadURL(new URL(url).toString())
 
     mainWindow.on('closed', () => {

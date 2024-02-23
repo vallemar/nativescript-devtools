@@ -8,9 +8,11 @@ import express, { Express } from 'express';
 import { dirname, join } from 'node:path';
 import dotenv from 'dotenv'
 import { DefaultCdpAdapter } from "@nativescript-community/devtools-cdp"
-import { DevToolsTabView, CdpAdapter } from "@nativescript-community/devtools-shared"
+import { DevToolsTabView, CdpAdapter, runViteAndExtracPort } from "@nativescript-community/devtools-shared"
 import { fileURLToPath } from 'node:url';
 import { exec } from 'node:child_process';
+import tcpPortUsed from "tcp-port-used"
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -19,9 +21,18 @@ const dotenvFile = process.env.NODE_ENV === "production" ? ".production" : ""
 dotenv.config({ path: `.env${dotenvFile}` })
 let io: Server | undefined;
 let app: Express | undefined;
-const port = (process.env.PORT || 3000) as number
 
-export function runDevTools(options?: { cdpAdapter?: CdpAdapter }) {
+async function findFreePort(port: number) {
+    const inUse = await tcpPortUsed.check(port, '127.0.0.1');
+    if (inUse) {
+        return findFreePort(port + 1);
+    }
+    return port;
+}
+
+const backendDevToolPort = await findFreePort((process.env.PORT ? parseInt(process.env.PORT) : 3000));
+
+export function runDevTools(options?: { cdpAdapter?: CdpAdapter, portCdp?: number }) {
     return new Promise<void>(resolve => {
         app = express();
         const cdpAdapter = new DefaultCdpAdapter();
@@ -55,8 +66,8 @@ export function runDevTools(options?: { cdpAdapter?: CdpAdapter }) {
             })
         });
 
-        serverExpress.listen(port, () => {
-            console.log(`listening on 0.0.0.0:${port}`)
+        serverExpress.listen(backendDevToolPort, () => {
+            console.log(`listening on 0.0.0.0:${backendDevToolPort}`)
             if (options?.cdpAdapter) {
                 options?.cdpAdapter.setServerSocketIo(io!);
             } else {
@@ -66,7 +77,7 @@ export function runDevTools(options?: { cdpAdapter?: CdpAdapter }) {
                 cdpAdapter.setServerSocketIo(io!);
                 cdpAdapter.initBus();
             }
-            runApp()
+            runApp(backendDevToolPort)
             resolve();
         });
     })
@@ -74,6 +85,7 @@ export function runDevTools(options?: { cdpAdapter?: CdpAdapter }) {
 
 export function addTapView(plugin: DevToolsTabView) {
     const url = `/plugin/${plugin.id}`;
+
     if (!plugin.src.includes("http")) {
         plugin.iframe = `http://localhost:${port}${url}`
     } else {
@@ -91,18 +103,9 @@ export function addTapView(plugin: DevToolsTabView) {
 function addBaseTabView() {
     //addTapView({ id: "network", name: "Network", src: `/Users/vallemar/workspaces/test/testCDP/apps/network/dist/index.html`, icon: "cloud_sync" })
 
-    var viteProcess = exec("cd " + path.join(__dirname, "../../../apps/network") + " && npm run dev");
-    viteProcess.stdout?.on('data', function (stdout) {
-        if (stdout.includes("Local")) {
-            const rx = /(?<=localhost:)(.*)(?=\/)/gm
-            const arr = rx.exec(stdout.toString());
-            if (arr) {
-                const port = arr[1].replace(
-                    /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '')
-                addTapView({ id: "network", name: "Network", src: `http://localhost:${port}`, icon: "cloud_sync" })
-            }
-        }
-    });
+    runViteAndExtracPort("cd " + path.join(__dirname, "../../../apps/network") + " && BACKEND_DEVTOOL_PORT=" + backendDevToolPort + " npm run dev").then((port: string) => {
+        addTapView({ id: "network", name: "Network", src: `http://localhost:${port}`, icon: "cloud_sync" })
+    })
 }
 
 

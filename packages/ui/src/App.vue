@@ -6,8 +6,9 @@ import { useTabViewStore } from "./store/tabViewStore"
 
 const { tabViews, addTabView, showTabView } = useTabViewStore();
 
+
 //@ts-ignore
-const socket = io("http://localhost:3000");
+const socket = io("http://localhost:" + (new URLSearchParams(window.location.search).get("BACKEND_DEVTOOL_PORT") || BACKEND_DEVTOOL_PORT));
 console.log(socket);
 
 socket.on("connect", () => {
