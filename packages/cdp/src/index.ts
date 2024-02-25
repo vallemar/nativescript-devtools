@@ -4,9 +4,11 @@ import type DevToolsProtocol from 'devtools-protocol'
 import * as rpc from 'noice-json-rpc'
 
 export class DefaultCdpAdapter extends CdpAdapter {
+
     webSocket: WebSocket | null = null;
     onClose!: () => void | undefined;
-
+    onError!: () => void | undefined;
+    onConnect!: () => void | undefined;
 
     async initBus() {
         /*    const rpcClient = new rpc.Client(new WebSocket('ws://localhost:8080'), { logConsole: true })
@@ -28,6 +30,8 @@ export class DefaultCdpAdapter extends CdpAdapter {
         this.webSocket = new WebSocket("ws://localhost:41000");
 
         this.webSocket?.on('open', () => {
+            console.log("[CDP] open")
+            this.onConnect();
             this.send({
                 id: 1,
                 method: "Runtime.enable",
@@ -37,13 +41,14 @@ export class DefaultCdpAdapter extends CdpAdapter {
             });
         });
         this.webSocket?.on('close', () => {
-            console.log("ERORRR")
+            console.log("[CDP] close")
             if (this.onClose)
                 this.onClose()
         });
 
         this.webSocket?.on('error', () => {
-            console.log("ERROR DefaultCdpAdapter")
+            console.log("[CDP] error")
+            this.onError();
         });
 
 

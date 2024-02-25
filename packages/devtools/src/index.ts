@@ -1,3 +1,5 @@
 import { runDevTools } from "./devtools";
 
-runDevTools();
+
+runDevTools({});
+

@@ -13,6 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { exec } from 'node:child_process';
 import tcpPortUsed from "tcp-port-used"
 import open from 'open';
+import { NS_DEVTOOLS_WEB_URL } from '.';
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -30,13 +31,13 @@ async function findFreePort(port: number) {
     }
     return port;
 }
-
+const tabViews = [];
 const backendDevToolPort = await findFreePort((process.env.PORT ? parseInt(process.env.PORT) : 3000));
 
 export function runDevTools(options?: { cdpAdapter?: CdpAdapter, portCdp?: number, runInWepApp?: boolean, runInBackground?: boolean }) {
     return new Promise<void>(resolve => {
         app = express();
-        const cdpAdapter = new DefaultCdpAdapter();
+        const cdpAdapter = options?.cdpAdapter ?? new DefaultCdpAdapter();
 
         const serverExpress = createServer(app);
         app.get('/', (req, res) => {
@@ -45,7 +46,7 @@ export function runDevTools(options?: { cdpAdapter?: CdpAdapter, portCdp?: numbe
 
         io = new Server(serverExpress, {
             cors: {
-                origin: false,
+                origin: true,
             },
         })
 
@@ -56,38 +57,44 @@ export function runDevTools(options?: { cdpAdapter?: CdpAdapter, portCdp?: numbe
             })
 
             socket.on("cdp", (data) => {
-                console.log("on CDP");
-                console.log(data);
-
-                if (options?.cdpAdapter) {
-                    options?.cdpAdapter.send(data);
-                } else {
-                    cdpAdapter.send(data);
-                }
+                // Send msg to cdp
+                cdpAdapter.send(data);
             })
+            // Send full msg when new clien connect
+            cdpAdapter.fullMsg.forEach(cdpMsg => socket.emit("cdp", cdpMsg));
         });
 
         serverExpress.listen(backendDevToolPort, async () => {
             console.log(`listening on 0.0.0.0:${backendDevToolPort}`)
-            if (options?.cdpAdapter) {
-                options?.cdpAdapter.setServerSocketIo(io!);
-            } else {
-                cdpAdapter.onClose = () => {
-                    cdpAdapter.initBus();
-                };
-                cdpAdapter.setServerSocketIo(io!);
+
+            cdpAdapter.setServerSocketIo(io!);
+            cdpAdapter.onClose = () => {
+                io?.emit("cdp-close")
+                cdpAdapter.initBus();
+            };
+            cdpAdapter.onError = () => {
+                io?.emit("cdp-error")
+            };
+            cdpAdapter.onConnect = () => {
+                io?.emit("cdp-connected")
+            };
+            if (!options?.cdpAdapter) {
                 cdpAdapter.initBus();
             }
-            if (options?.runInBackground === undefined || options?.runInBackground === false) {
-                if (options?.runInWepApp) {
-                    //TODO: define admin panel
-                    await open('https://sindresorhus.com?BACKEND_DEVTOOL_PORT=' + backendDevToolPort);
-                } else {
-                    runElectronApp(backendDevToolPort)
-                }
-            }
 
-            resolve();
+            if (options?.runInBackground) {
+                runViteAndExtracPort("cd " + path.join(__dirname, "../../ui") + " && BACKEND_DEVTOOL_PORT=" + backendDevToolPort + " npm run dev").then(async (port: string) => {
+                    resolve();
+                })
+            } else if (options?.runInWepApp) {
+                runViteAndExtracPort("cd " + path.join(__dirname, "../../ui") + " && BACKEND_DEVTOOL_PORT=" + backendDevToolPort + " npm run dev").then(async (port: string) => {
+                    await open(`http://localhost:${port}/?BACKEND_DEVTOOL_PORT=${backendDevToolPort}`);
+                    resolve();
+                })
+            } else {
+                runElectronApp(backendDevToolPort)
+                resolve();
+            }
         });
     })
 }
@@ -106,7 +113,8 @@ export function addTapView(plugin: DevToolsTabView) {
         res.sendFile(plugin.src)
         //res.sendFile('views/test.html', {root: __dirname })
     });
-    io?.emit("add-plugin", plugin)
+    io?.emit("add-plugin", plugin);
+    tabViews.push(plugin);
 }
 
 function addBaseTabView() {

@@ -7,7 +7,10 @@ export const useTabViewStore = defineStore('tabView', () => {
     const tabViews = ref<DevToolsTabView[]>([])
 
     function addTabView(plugin: DevToolsTabView) {
-        tabViews.value.push(plugin);
+        if (!tabViews.value.find(storePlugin => storePlugin.id === plugin.id)) {
+            tabViews.value.push(plugin);
+        }
+
     }
     function showTabView(plugin: DevToolsTabView) {
         tabViews.value.forEach(tab => (tab.show = false))
